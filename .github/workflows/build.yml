@@ -1,12 +1,7 @@
 name: Build Win32 CompressDialog
 
 on:
-  workflow_dispatch:
-  push:
-    paths:
-      - 'CompressDialogWin32.cpp'
-      - 'CMakeLists.txt'
-      - '.github/workflows/build.yml'
+  workflow_dispatch:   # 只保留手动触发
 
 jobs:
   build:
