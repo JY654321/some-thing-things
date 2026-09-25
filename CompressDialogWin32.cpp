@@ -44,17 +44,16 @@
 #define IDC_MEM_DE_VALUE     1027
 #define IDC_OK               1100
 #define IDC_CANCEL           1101
-#define IDC_HELP             1102
+#define IDC_HELP_BTN         1102
 
 // ==================== 全局深色标志 ====================
 bool g_darkMode = false;
+HFONT g_font = nullptr;
 
-// ==================== 深色模式工具函数 ====================
-// 尝试开启标题栏深色模式（Win10 1809+ / Win11）
+// ==================== 深色模式工具 ====================
 void EnableDarkTitleBar(HWND hwnd)
 {
     BOOL dark = TRUE;
-    // 20 = DWMWA_USE_IMMERSIVE_DARK_MODE，Win10 早期版本是 19
     const DWORD DWMWA_USE_IMMERSIVE_DARK_MODE_OLD = 19;
     const DWORD DWMWA_USE_IMMERSIVE_DARK_MODE_NEW = 20;
     if (FAILED(DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE_NEW, &dark, sizeof(dark))))
@@ -63,7 +62,6 @@ void EnableDarkTitleBar(HWND hwnd)
     }
 }
 
-// 检测系统当前是否为深色模式（读注册表）
 bool IsSystemDarkMode()
 {
     HKEY hKey;
@@ -78,17 +76,7 @@ bool IsSystemDarkMode()
     return value == 0; // 0 = 深色
 }
 
-// 手动设置窗口和控件的深色配色
-void ApplyDarkModeToControls(HWND hwnd)
-{
-    if (!g_darkMode) return;
-    // 这里只做一个最简示例：设置窗口背景为深色
-    // 实际每个控件的颜色要在 WM_CTLCOLORxxx 里处理
-}
-
 // ==================== 全局字体 ====================
-HFONT g_font = nullptr;
-
 HFONT GetUIFont()
 {
     if (!g_font)
@@ -100,65 +88,65 @@ HFONT GetUIFont()
     return g_font;
 }
 
-// ==================== 创建控件辅助 ====================
-HWND CreateLabel(HWND parent, const wchar_t* text, int x, int y, int w, int h, int id = -1)
+// ==================== 控件创建辅助 ====================
+HWND CreateLabel(HWND hParent, const wchar_t* text, int x, int y, int w, int h, int id = -1)
 {
-    HWND h = CreateWindowExW(0, L"STATIC", text,
+    HWND hwnd = CreateWindowExW(0, L"STATIC", text,
         WS_CHILD | WS_VISIBLE | SS_LEFT,
-        x, y, w, h, parent, (HMENU)(INT_PTR)id, nullptr, nullptr);
-    SendMessageW(h, WM_SETFONT, (WPARAM)GetUIFont(), TRUE);
-    return h;
+        x, y, w, h, hParent, (HMENU)(INT_PTR)id, nullptr, nullptr);
+    SendMessageW(hwnd, WM_SETFONT, (WPARAM)GetUIFont(), TRUE);
+    return hwnd;
 }
 
-HWND CreateCombo(HWND parent, int x, int y, int w, int h, int id,
+HWND CreateCombo(HWND hParent, int x, int y, int w, int h, int id,
     const std::vector<std::wstring>& items)
 {
-    HWND h = CreateWindowExW(0, L"COMBOBOX", L"",
+    HWND hwnd = CreateWindowExW(0, L"COMBOBOX", L"",
         WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP,
-        x, y, w, h, parent, (HMENU)(INT_PTR)id, nullptr, nullptr);
-    SendMessageW(h, WM_SETFONT, (WPARAM)GetUIFont(), TRUE);
+        x, y, w, h, hParent, (HMENU)(INT_PTR)id, nullptr, nullptr);
+    SendMessageW(hwnd, WM_SETFONT, (WPARAM)GetUIFont(), TRUE);
     for (auto& s : items)
-        SendMessageW(h, CB_ADDSTRING, 0, (LPARAM)s.c_str());
-    SendMessageW(h, CB_SETCURSEL, 0, 0);
-    return h;
+        SendMessageW(hwnd, CB_ADDSTRING, 0, (LPARAM)s.c_str());
+    SendMessageW(hwnd, CB_SETCURSEL, 0, 0);
+    return hwnd;
 }
 
-HWND CreateCheck(HWND parent, const wchar_t* text, int x, int y, int w, int h, int id, bool checked = false)
+HWND CreateCheck(HWND hParent, const wchar_t* text, int x, int y, int w, int h, int id, bool checked = false)
 {
-    HWND h = CreateWindowExW(0, L"BUTTON", text,
+    HWND hwnd = CreateWindowExW(0, L"BUTTON", text,
         WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX | WS_TABSTOP,
-        x, y, w, h, parent, (HMENU)(INT_PTR)id, nullptr, nullptr);
-    SendMessageW(h, WM_SETFONT, (WPARAM)GetUIFont(), TRUE);
-    if (checked) SendMessageW(h, BM_SETCHECK, BST_CHECKED, 0);
-    return h;
+        x, y, w, h, hParent, (HMENU)(INT_PTR)id, nullptr, nullptr);
+    SendMessageW(hwnd, WM_SETFONT, (WPARAM)GetUIFont(), TRUE);
+    if (checked) SendMessageW(hwnd, BM_SETCHECK, BST_CHECKED, 0);
+    return hwnd;
 }
 
-HWND CreateButton(HWND parent, const wchar_t* text, int x, int y, int w, int h, int id)
+HWND CreateButton(HWND hParent, const wchar_t* text, int x, int y, int w, int h, int id)
 {
-    HWND h = CreateWindowExW(0, L"BUTTON", text,
+    HWND hwnd = CreateWindowExW(0, L"BUTTON", text,
         WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | WS_TABSTOP,
-        x, y, w, h, parent, (HMENU)(INT_PTR)id, nullptr, nullptr);
-    SendMessageW(h, WM_SETFONT, (WPARAM)GetUIFont(), TRUE);
-    return h;
+        x, y, w, h, hParent, (HMENU)(INT_PTR)id, nullptr, nullptr);
+    SendMessageW(hwnd, WM_SETFONT, (WPARAM)GetUIFont(), TRUE);
+    return hwnd;
 }
 
-HWND CreateEdit(HWND parent, const wchar_t* text, int x, int y, int w, int h, int id,
+HWND CreateEdit(HWND hParent, const wchar_t* text, int x, int y, int w, int h, int id,
     DWORD extraStyle = 0)
 {
-    HWND h = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", text,
+    HWND hwnd = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", text,
         WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL | extraStyle,
-        x, y, w, h, parent, (HMENU)(INT_PTR)id, nullptr, nullptr);
-    SendMessageW(h, WM_SETFONT, (WPARAM)GetUIFont(), TRUE);
-    return h;
+        x, y, w, h, hParent, (HMENU)(INT_PTR)id, nullptr, nullptr);
+    SendMessageW(hwnd, WM_SETFONT, (WPARAM)GetUIFont(), TRUE);
+    return hwnd;
 }
 
-HWND CreateGroupBox(HWND parent, const wchar_t* text, int x, int y, int w, int h, int id)
+HWND CreateGroupBox(HWND hParent, const wchar_t* text, int x, int y, int w, int h, int id)
 {
-    HWND h = CreateWindowExW(0, L"BUTTON", text,
+    HWND hwnd = CreateWindowExW(0, L"BUTTON", text,
         WS_CHILD | WS_VISIBLE | BS_GROUPBOX,
-        x, y, w, h, parent, (HMENU)(INT_PTR)id, nullptr, nullptr);
-    SendMessageW(h, WM_SETFONT, (WPARAM)GetUIFont(), TRUE);
-    return h;
+        x, y, w, h, hParent, (HMENU)(INT_PTR)id, nullptr, nullptr);
+    SendMessageW(hwnd, WM_SETFONT, (WPARAM)GetUIFont(), TRUE);
+    return hwnd;
 }
 
 // ==================== 控件创建 ====================
@@ -269,7 +257,7 @@ void CreateControls(HWND hwnd)
     // ---- 底部按钮 ----
     CreateButton(hwnd, L"确定", 300, 590, 88, 28, IDC_OK);
     CreateButton(hwnd, L"取消", 400, 590, 88, 28, IDC_CANCEL);
-    CreateButton(hwnd, L"帮助", 500, 590, 88, 28, IDC_HELP);
+    CreateButton(hwnd, L"帮助", 500, 590, 88, 28, IDC_HELP_BTN);
 }
 
 // ==================== 处理复选框：显示密码 ====================
@@ -279,7 +267,6 @@ void OnShowPasswordChanged(HWND hwnd)
     HWND hChk = GetDlgItem(hwnd, IDC_SHOW_PWD);
     bool checked = SendMessageW(hChk, BM_GETCHECK, 0, 0) == BST_CHECKED;
 
-    // 切换 ES_PASSWORD 样式
     LONG style = GetWindowLongW(hPwd, GWL_STYLE);
     if (checked)
         style &= ~ES_PASSWORD;
@@ -287,7 +274,6 @@ void OnShowPasswordChanged(HWND hwnd)
         style |= ES_PASSWORD;
     SetWindowLongW(hPwd, GWL_STYLE, style);
 
-    // 强制重绘
     InvalidateRect(hPwd, nullptr, TRUE);
 }
 
@@ -314,7 +300,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             OnShowPasswordChanged(hwnd);
             return 0;
         }
-        if (id == IDC_OK || id == IDC_CANCEL || id == IDC_HELP)
+        if (id == IDC_OK || id == IDC_CANCEL || id == IDC_HELP_BTN)
         {
             DestroyWindow(hwnd);
             return 0;
@@ -359,14 +345,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 // ==================== 入口 ====================
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow)
 {
-    // 初始化通用控件
     INITCOMMONCONTROLSEX icc = { sizeof(icc), ICC_STANDARD_CLASSES };
     InitCommonControlsEx(&icc);
 
-    // 检测系统深色模式
     g_darkMode = IsSystemDarkMode();
 
-    // 注册窗口类
     WNDCLASSEXW wc = { sizeof(wc) };
     wc.lpfnWndProc = WndProc;
     wc.hInstance = hInstance;
@@ -375,7 +358,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow)
     wc.lpszClassName = L"CompressDialogWnd";
     RegisterClassExW(&wc);
 
-    // 创建窗口（固定大小，不可伸缩）
     HWND hwnd = CreateWindowExW(
         0, L"CompressDialogWnd", L"添加到压缩包（Win32 样板）",
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
@@ -385,7 +367,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow)
     ShowWindow(hwnd, nCmdShow);
     UpdateWindow(hwnd);
 
-    // 消息循环
     MSG msg;
     while (GetMessageW(&msg, nullptr, 0, 0))
     {
